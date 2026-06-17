@@ -17,23 +17,78 @@
             margin: 0;
         }
 
-        /* Updated CSS for responsive scaling on mobile and desktop */
+        /* --- Login Overlay CSS --- */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999; /* Keeps the login screen on top of everything */
+        }
+
+        #login-box {
+            background-color: #2a2a2a;
+            padding: 40px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        #login-box input {
+            padding: 10px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background-color: #111;
+            color: #fff;
+            width: 80%;
+        }
+
+        #login-box button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        #login-box button:hover {
+            background-color: #0056b3;
+        }
+
+        #error-msg {
+            color: #ff4d4d;
+            margin-top: 15px;
+            display: none; /* Hidden by default */
+        }
+
+        /* --- Viewer CSS --- */
         #viewer-container {
             position: relative;
-            width: 100vw;       /* Stretch to the full width of the screen */
-            max-width: 512px;   /* Don't get larger than 512px on desktop */
-            aspect-ratio: 1 / 1; /* Keep it a perfect square */
+            width: 100vw;       
+            max-width: 512px;   
+            aspect-ratio: 1 / 1; 
             background-color: #000;
             overflow: hidden;
             border: 1px solid #333;
-            touch-action: none; /* Prevents default browser pinch-to-zoom on the image */
+            touch-action: none; 
         }
 
         #anatomy-image {
             width: 100%;
             height: 100%;
             object-fit: contain;
-            pointer-events: none; /* Prevents the image from being dragged accidentally */
+            pointer-events: none; 
         }
 
         #slice-indicator {
@@ -44,6 +99,16 @@
 </head>
 <body>
 
+    <div id="login-overlay">
+        <div id="login-box">
+            <h2>Atlas Access</h2>
+            <input type="password" id="password-input" placeholder="Enter Password">
+            <br>
+            <button id="login-btn">Submit</button>
+            <div id="error-msg">Incorrect password. Please try again.</div>
+        </div>
+    </div>
+
     <div id="viewer-container">
         <img id="anatomy-image" src="images/axial_0.webp" alt="Anatomy Slice">
     </div>
@@ -51,9 +116,35 @@
     <div id="slice-indicator">Slice: 0 / 99</div>
 
     <script>
+        // --- Password Logic ---
+        const loginOverlay = document.getElementById('login-overlay');
+        const passwordInput = document.getElementById('password-input');
+        const loginBtn = document.getElementById('login-btn');
+        const errorMsg = document.getElementById('error-msg');
+
+        function checkPassword() {
+            if (passwordInput.value === 'Sburad1!') {
+                loginOverlay.style.display = 'none'; // Hide the login screen
+            } else {
+                errorMsg.style.display = 'block'; // Show error message
+                passwordInput.value = ''; // Clear the input
+            }
+        }
+
+        // Trigger login on button click
+        loginBtn.addEventListener('click', checkPassword);
+
+        // Trigger login when hitting the "Enter" key
+        passwordInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+
         // --- Configuration ---
-        const totalSlices = 25; // Update this to match your actual extracted frame count
-        const imagePrefix = 'images/axial_'; // Use 'file:///C:/Users/ryans/Videos/images/axial_' if HTML is kept outside
+        const totalSlices = 100; // Update this to match your actual extracted frame count
+        const imagePrefix = 'images/axial_'; 
         const imageExtension = '.webp';
         
         // --- State ---
@@ -66,10 +157,7 @@
 
         // --- Core Function ---
         function updateViewer() {
-            // Update the image source
             anatomyImage.src = `${imagePrefix}${currentSlice}${imageExtension}`;
-            
-            // Update the text indicator
             sliceIndicator.textContent = `Slice: ${currentSlice} / ${totalSlices - 1}`;
         }
 
@@ -83,7 +171,6 @@
                 currentSlice--;
             }
 
-            // Clamp the slice index
             if (currentSlice < 0) currentSlice = 0;
             else if (currentSlice >= totalSlices) currentSlice = totalSlices - 1;
 
@@ -92,10 +179,9 @@
 
         // --- Mobile Interaction (Touch Swipe) ---
         let startY = 0;
-        const sensitivity = 15; // How many pixels of swiping equals one slice change
+        const sensitivity = 15; 
 
         viewerContainer.addEventListener('touchstart', (event) => {
-            // Record where the user's finger first touched the screen
             startY = event.touches[0].clientY;
         }, { passive: true });
 
@@ -105,35 +191,20 @@
             let currentY = event.touches[0].clientY;
             let difference = startY - currentY; 
 
-            // Check if the finger has moved far enough to trigger a slice change
             if (Math.abs(difference) > sensitivity) {
                 if (difference > 0) {
-                    currentSlice++; // Swiped up
+                    currentSlice++; 
                 } else {
-                    currentSlice--; // Swiped down
+                    currentSlice--; 
                 }
 
-                // Clamp the slice index
                 if (currentSlice < 0) currentSlice = 0;
                 else if (currentSlice >= totalSlices) currentSlice = totalSlices - 1;
 
                 updateViewer();
-
-                // Reset start position for continuous smooth swiping
                 startY = currentY; 
             }
         }, { passive: false });
-
-        // --- Preload Images (Optional but recommended for smoother scrolling) ---
-        function preloadImages() {
-            for (let i = 0; i < totalSlices; i++) {
-                const img = new Image();
-                img.src = `${imagePrefix}${i}${imageExtension}`;
-            }
-        }
-        
-        // Uncomment the line below to enable preloading
-        // preloadImages(); 
     </script>
 </body>
 </html>
