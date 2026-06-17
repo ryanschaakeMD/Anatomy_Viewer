@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anatomy Image Stack Viewer</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #viewer-container {
+            position: relative;
+            width: 1024px; /* Standard starting size for medical matrices */
+            height: 1024px;
+            background-color: #000;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        #anatomy-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none; /* Prevents the image from being dragged accidentally */
+        }
+
+        #slice-indicator {
+            margin-top: 15px;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="viewer-container">
+        <img id="anatomy-image" src="images/axial_0.webp" alt="Anatomy Slice">
+    </div>
+
+    <div id="slice-indicator">Slice: 0 / 99</div>
+
+    <script>
+        // --- Configuration ---
+        const totalSlices = 25; // Total number of images (0 to 99)
+        const imagePrefix = 'images/axial_';
+        const imageExtension = '.webp';
+        
+        // --- State ---
+        let currentSlice = 0;
+
+        // --- DOM Elements ---
+        const viewerContainer = document.getElementById('viewer-container');
+        const anatomyImage = document.getElementById('anatomy-image');
+        const sliceIndicator = document.getElementById('slice-indicator');
+
+        // --- Functions ---
+        function updateViewer() {
+            // Update the image source
+            anatomyImage.src = `${imagePrefix}${currentSlice}${imageExtension}`;
+            
+            // Update the text indicator
+            sliceIndicator.textContent = `Slice: ${currentSlice} / ${totalSlices - 1}`;
+        }
+
+        // --- Event Listeners ---
+        viewerContainer.addEventListener('wheel', (event) => {
+            // Prevent the whole webpage from scrolling when scrolling over the image
+            event.preventDefault(); 
+
+            // event.deltaY determines the direction of the scroll
+            // Positive deltaY means scrolling down (towards user)
+            // Negative deltaY means scrolling up (away from user)
+            if (event.deltaY > 0) {
+                // Scroll down: Go to next slice
+                currentSlice++;
+            } else if (event.deltaY < 0) {
+                // Scroll up: Go to previous slice
+                currentSlice--;
+            }
+
+            // Clamp the slice index so it doesn't go out of bounds
+            if (currentSlice < 0) {
+                currentSlice = 0;
+            } else if (currentSlice >= totalSlices) {
+                currentSlice = totalSlices - 1;
+            }
+
+            // Render the new slice
+            updateViewer();
+        }, { passive: false }); // passive: false is required to use event.preventDefault()
+
+        // Preload the next few images for a smoother experience (optional but recommended)
+        function preloadImages() {
+            for (let i = 0; i < totalSlices; i++) {
+                const img = new Image();
+                img.src = `${imagePrefix}${i}${imageExtension}`;
+            }
+        }
+        
+        // Call preload if you have a relatively small dataset, otherwise rely on browser caching as they scroll
+        // preloadImages(); 
+    </script>
+</body>
+</html>
